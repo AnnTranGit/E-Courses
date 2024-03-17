@@ -1,37 +1,49 @@
-import { useFormik } from "formik";
 import React, { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { NavLink, useNavigate } from "react-router-dom";
-import { loginApiAction } from "../redux/Reducers/UserReducer";
-import { updateOnOkayAction } from "../redux/Reducers/LogReducer";
+import { toast } from "react-toastify";
+import api from "../config/axios";
+import { login } from "../redux/Reducers/UserReducer";
+
+
 
 const Login = () => {
   const [isActive, setIsActive] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const frmLogin = useFormik({
-    initialValues: {
-      taiKhoan: "",
-      matKhau: "",
-    },
-    onSubmit: async (values) => {
-      await dispatch(loginApiAction(values));
-      navigate("/");
-    },
-  });
-
-  useEffect(() => {
-    const action = updateOnOkayAction(frmLogin.handleSubmit);
-    dispatch(action);
-  }, []);
-
-
-  const handleSwitchClick = (e) => {
-    e.preventDefault(); // Prevent default behavior
-    setIsActive(!isActive);
-
+  const onFinish = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const values = Object.fromEntries(formData.entries());
+    try {
+      const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0ZW5Mb3AiOiJCb290Y2FtcCA1NyIsIkhldEhhblN0cmluZyI6IjI5LzA2LzIwMjQiLCJIZXRIYW5UaW1lIjoiMTcxOTYxOTIwMDAwMCIsIm5iZiI6MTY4ODkyMjAwMCwiZXhwIjoxNzE5NzY2ODAwfQ.9MKEqdjyd8nN84l6J6hg-XfkLpmaY_aBPozV_TXxusM";
+      const response = await api.post("QuanLyNguoiDung/DangNhap", values, {
+        headers: {
+          TokenCybersoft: token,
+        },
+      });
+      localStorage.setItem("AccessToken", response.data.accessToken);
+      if (response.data.maLoaiNguoiDung === "HV") {
+        navigate("/my-profile");
+      } else {
+        navigate("/dashboard");
+      }
+      dispatch(login(response.data));
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response ? error.response.data : "Error occurred");
+    }
   };
+
+  const handleSwitchClick = () => {
+    setIsActive(!isActive);
+  };
+
+
+
+
+
 
   return <div className="container">
     <section id="formHolder">
@@ -59,13 +71,14 @@ const Login = () => {
         <div className="col-sm-6 form">
           {/* <!-- Login Form --> */}
           <div className={`login form-piece ${isActive ? 'switched' : ''}`}>
-            <form className="login-form">
+            <form className="login-form" onSubmit={onFinish}>
               <div className="form-group">
                 <label>Username</label>
                 <input
                   type="text"
                   name="taiKhoan"
                   required
+
                 />
               </div>
 
@@ -75,13 +88,13 @@ const Login = () => {
                   type="password"
                   name="matKhau"
                   required
+
                 />
               </div>
 
               <div className="CTA">
-                {/* <input type="submit" value="Login"/>  */}
+                <input type="submit" value="Login" />
 
-                <button className="btn btn-danger  pt-0 mt-0"> <NavLink to={'/my-profile'} className='me-3'> Login</NavLink></button>
 
                 <NavLink href="#" className="switch" onClick={handleSwitchClick}>
                   I'm New
@@ -96,7 +109,7 @@ const Login = () => {
 
           {/* <!-- Signup Form --> */}
           <div className={`signup form-piece ${isActive ? '' : 'switched'}`}>
-            <form className="signup-form" onSubmit={frmLogin.handleSubmit}>
+            <form className="signup-form" >
               <div className="form-group">
                 <label htmlFor="name">Full Name</label>
                 <input type="text" name="username" className="name" />
